@@ -1,101 +1,249 @@
-import Image from "next/image";
+"use client";
+import Sidebar from "@/components/sideBar";
+import React, { useState, useEffect, createContext, useContext } from "react";
+import fetchData from "@/fetch/fetch";
+import Modal from "../components/modal";
+import { findInNestedArray } from "@/helper/function";
+import MyContext from '../helper/context';
+import ConfirmModal from "@/components/confirm";
+const DataContext = createContext();
 
-export default function Home() {
+const TreeNode = ({ menu }) => {
+  const [expanded, setExpanded] = React.useState(false);
+  const {menus, setMenus} = useContext(DataContext);
+  const {selectedMenu, setSelectedMenu} = useContext(DataContext);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const { fetchPosts } = useContext(MyContext);
+
+  const openModal = () => setIsModalOpen(true);
+  const closeModal = () => setIsModalOpen(false);
+  const openConfirmModal = () => setIsConfirmModalOpen(true);
+  const closeConfirmModal = () => setIsConfirmModalOpen(false);
+  const handleConfirm = async () => {
+    if (selectedMenu.children.length > 0) return alert('Can not delete parent, remove child first!');
+    try {
+      const res = await fetchData(`/menu/${selectedMenu.id}`, "DELETE");
+      if (res.status == 200) await fetchPosts();
+    } catch (error) {
+      console.log(error);
+    }
+    alert('You confirmed!');
+    closeConfirmModal();
+  };
+
+  function handleClick() {
+    setExpanded(!expanded)
+    if (!menu.depth) menu.depth = '';
+    menu.parent = getParent(menu);
+    setSelectedMenu(menu)
+  }
+
+  function getParent(obj) {
+    let slugArray = obj.slug.split(":");
+    let meIndex = slugArray.indexOf(`${obj.id}`);
+    let previousData = meIndex > 0 ? slugArray[meIndex - 1] : "-";
+    if (previousData !== "-") return findInNestedArray(menus ,previousData);
+    return previousData
+  }
+
+  function createMenu() {
+    openModal()
+  }
+
+  function deleteMenu() {
+    openConfirmModal()
+  }
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.js
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <div style={{ marginLeft: "20px" }}>
+      <div onClick={handleClick} style={{ cursor: "pointer" }} className="flex space-x-4">
+        {menu.children && menu.children.length > 0 && (
+          <span>{expanded ? "▼" : "▶"} </span>
+        )}
+        <div>{menu.name}</div>
+        <div>
+          <button onClick={() => createMenu(menu)} className="w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center opacity-10 hover:opacity-100 transition-opacity duration-300">+</button>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+        <button onClick={() => deleteMenu(menu)} className="w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center opacity-10 hover:opacity-100 transition-opacity duration-300">-</button>
+      </div>
+      {expanded && menu.children && (
+        <div>
+          {menu.children.map((child, index) => (
+            <TreeNode key={index} menu={child} />
+          ))}
+        </div>
+      )}
+      <Modal isOpen={isModalOpen} onClose={closeModal} menu={menu}/>
+      <ConfirmModal isOpen={isConfirmModalOpen} onClose={closeConfirmModal} onConfirm={handleConfirm}></ConfirmModal>
     </div>
   );
-}
+};
+
+const Home = () => {
+  const [menus, setMenus] = useState([]);
+  const [selectedMenu, setSelectedMenu] = useState({
+    id: '',
+    name: '',
+    depth: '',
+    parent: '',
+    slug: ''
+  });
+
+  useEffect(() => {
+    fetchPosts();
+  }, []);
+
+  function handleDataFromChild(data) {
+    setSelectedMenu(data);
+  }
+
+  async function fetchPosts() {
+    try {
+      const res = await fetchData("/menu", "GET");
+      const data = await res.json();
+      generateChild(data);
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  function generateChild(data) {
+    const menuMap = {};
+    const rootMenus = [];
+
+    data.forEach((item) => {
+      menuMap[item.id] = { ...item, children: [] };
+    });
+
+    data.forEach((item) => {
+      const levels = item.slug.split(":");
+      if (levels.length > 1) {
+        const parentId = parseInt(levels[levels.length - 2]);
+        const parent = menuMap[parentId];
+        if (parent) parent.children.push(menuMap[item.id]);
+      } else {
+        rootMenus.push(menuMap[item.id]);
+      }
+    });
+    setMenus(rootMenus);
+    return rootMenus;
+  }
+
+  const handleChange = (e) => {    
+    const { name, value } = e.target;    
+    setSelectedMenu((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  async function updateMenu() {
+    try {
+      const res = await fetchData(`/menu/${selectedMenu.id}`, "PATCH", { name: selectedMenu.name });
+      if (res.status == 200) await fetchPosts();
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  if (menus.length == 0) return <div>Loading...</div>
+  return (
+    <DataContext.Provider value={{ selectedMenu, setSelectedMenu, menus, setMenus }}>
+      <MyContext.Provider value={{ fetchPosts }}>
+      <div style={{ display: "flex" }}>
+        <Sidebar />
+      
+          <div className="container pt-10 pl-5">
+            <div className="left" style={{ flex: 1, padding: "20px" }}>
+              <div className="flex items-center space-x-2 pb-5">
+                <div className="flex items-center justify-center w-8 h-8 bg-blue-500 text-white rounded-full">
+                  <span className="text-xl">&#10003;</span>
+                </div>
+                <span className="text-blue-500 font-medium text-2xl">Menus</span>
+              </div>
+
+            <form class="max-w-sm pb-5">
+              <label for="countries" class="">Menu</label>
+              <select id="countries" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
+                {
+                  menus.filter(el => el.slug.split(':').length == 1).map((menu, index) => (
+                    <option key={index} value={menu.id}>{menu.name}</option>
+                  ))
+                }
+              </select>
+            </form>
+
+            {menus.map((menu, index) => (
+              <TreeNode key={index} menu={menu} selectedMenu={handleDataFromChild}/>
+            ))}
+          </div>
+
+          <div className="right" style={{ flex: 1, padding: "20px" }}>
+            <form className="max-w-sm mx-auto pt-20">
+              <div className="mb-5">
+                <label htmlFor="text" className="block mb-2 text-sm font-medium text-gray-900 dark:text-black">Menu ID</label>
+                <input type="text" id="text"
+                  className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                  placeholder="21d1316e3e1y1ne81y8713"
+                  value={selectedMenu.id}
+                  name="id"
+                  disabled
+                  required
+                />
+              </div>
+              <div className="mb-5">
+                <label htmlFor="text" className="block mb-2 text-sm font-medium text-gray-900 dark:text-black">Depth</label>
+                <input type="text" id="text"
+                  className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                  value={selectedMenu.slug.split(':').length - 1}
+                  onChange={handleChange}
+                  name="depth"
+                  disabled
+                  required
+                />
+              </div>
+              <div className="mb-5">
+                <label htmlFor="text" className="block mb-2 text-sm font-medium text-gray-900 dark:text-black">Parent Data</label>
+                <input type="text" id="text"
+                  className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                  value={selectedMenu.parent}
+                  onChange={handleChange}
+                  name="parent"
+                  disabled
+                  required
+                />
+              </div>
+              <div className="mb-5">
+                <label htmlFor="text" className="block mb-2 text-sm font-medium text-gray-900 dark:text-black">Name</label>
+                <input type="text" id="text"
+                  className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                  value={selectedMenu.name}
+                  onChange={handleChange}
+                  name="name"
+                  required
+                />
+              </div>
+
+              {
+                selectedMenu.id && 
+                <button
+                  type="button"
+                  className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+                  onClick={updateMenu}
+                >
+                  Save
+                </button>
+              }
+
+            </form>
+          </div>
+        </div>
+
+      </div>
+      </MyContext.Provider>
+    </DataContext.Provider>
+  );
+};
+
+export default Home;
