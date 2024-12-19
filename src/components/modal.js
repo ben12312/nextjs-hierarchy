@@ -2,7 +2,7 @@ import { useState, useContext } from "react";
 import fetchData from "@/fetch/fetch";
 import MyContext from "../helper/context";
 
-const Modal = ({ isOpen, onClose, menu }) => {
+const Modal = ({ isOpen, onClose, menu, isParent }) => {
   const { fetchPosts } = useContext(MyContext);
 
   if (!isOpen) return null;
@@ -24,7 +24,7 @@ const Modal = ({ isOpen, onClose, menu }) => {
     try {
       const res = await fetchData(`/menu`, "POST", {
         name: selectedMenu.name,
-        parent: menu.slug,
+        parent: isParent ? null : menu.slug,
       });
       await fetchPosts();
       onClose();

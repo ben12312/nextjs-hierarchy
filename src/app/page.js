@@ -11,13 +11,15 @@ const DataContext = createContext();
 const TreeNode = ({ menu }) => {
   const [expanded, setExpanded] = React.useState(false);
   const {menus, setMenus} = useContext(DataContext);
-  const {selectedMenu, setSelectedMenu} = useContext(DataContext);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const {selectedMenu, setSelectedMenu, isModalOpen, setIsModalOpen, isParent, setIsParent} = useContext(DataContext);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const { fetchPosts } = useContext(MyContext);
 
   const openModal = () => setIsModalOpen(true);
-  const closeModal = () => setIsModalOpen(false);
+  const closeModal = () => {
+    setIsParent(false)
+    setIsModalOpen(false)
+  };
   const openConfirmModal = () => setIsConfirmModalOpen(true);
   const closeConfirmModal = () => setIsConfirmModalOpen(false);
   const handleConfirm = async () => {
@@ -74,7 +76,7 @@ const TreeNode = ({ menu }) => {
           ))}
         </div>
       )}
-      <Modal isOpen={isModalOpen} onClose={closeModal} menu={menu}/>
+      <Modal isOpen={isModalOpen} onClose={closeModal} menu={menu} isParent={isParent}/>
       <ConfirmModal isOpen={isConfirmModalOpen} onClose={closeConfirmModal} onConfirm={handleConfirm}></ConfirmModal>
     </div>
   );
@@ -82,6 +84,8 @@ const TreeNode = ({ menu }) => {
 
 const Home = () => {
   const [menus, setMenus] = useState([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isParent, setIsParent] = useState(false);
   const [selectedMenu, setSelectedMenu] = useState({
     id: '',
     name: '',
@@ -147,25 +151,31 @@ const Home = () => {
     }
   }
 
+  function createParent() {
+    setIsParent(true);
+    setIsModalOpen(true);
+  }
+
   if (menus.length == 0) return <div>Loading...</div>
   return (
-    <DataContext.Provider value={{ selectedMenu, setSelectedMenu, menus, setMenus }}>
+    <DataContext.Provider value={{ selectedMenu, setSelectedMenu, menus, setMenus, isModalOpen, setIsModalOpen, isParent, setIsParent }}>
       <MyContext.Provider value={{ fetchPosts }}>
       <div style={{ display: "flex" }}>
         <Sidebar />
-      
-          <div className="container pt-10 pl-5">
-            <div className="left" style={{ flex: 1, padding: "20px" }}>
-              <div className="flex items-center space-x-2 pb-5">
-                <div className="flex items-center justify-center w-8 h-8 bg-blue-500 text-white rounded-full">
-                  <span className="text-xl">&#10003;</span>
-                </div>
-                <span className="text-blue-500 font-medium text-2xl">Menus</span>
+        
+        <div className="container pt-10 pl-5">
+          <div className="left" style={{ flex: 1, padding: "20px" }}>
+            <div className="flex items-center space-x-2 pb-5">
+              <div className="flex items-center justify-center w-8 h-8 bg-blue-500 text-white rounded-full">
+                <span className="text-xl">&#10003;</span>
               </div>
+              <span className="text-blue-500 font-medium text-2xl">Menus</span>
+            </div>
+            <button onClick={() => createParent()} className="bg-blue-500 hover:bg-blue-700 text-white py-2 px-4 rounded-full">Add Parent Menu</button>
 
-            <form class="max-w-sm pb-5">
-              <label for="countries" class="">Menu</label>
-              <select id="countries" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
+            <form className="max-w-sm pb-5 pt-5">
+              <label htmlFor="countries" className="">Menu</label>
+              <select id="countries" className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
                 {
                   menus.filter(el => el.slug.split(':').length == 1).map((menu, index) => (
                     <option key={index} value={menu.id}>{menu.name}</option>
