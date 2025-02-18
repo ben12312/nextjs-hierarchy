@@ -4,8 +4,8 @@ import MyContext from "../helper/context";
 
 const Modal = ({ isOpen, onClose, menu, isParent }) => {
   const { fetchPosts } = useContext(MyContext);
-
   if (!isOpen) return null;
+  const [loading, setLoading] = useState(false);
   const [selectedMenu, setSelectedMenu] = useState({
     name: "",
     parent: "",
@@ -22,19 +22,23 @@ const Modal = ({ isOpen, onClose, menu, isParent }) => {
 
   async function createMenu() {
     try {
+      setLoading(true)
       const res = await fetchData(`/menu`, "POST", {
         name: selectedMenu.name,
         parent: isParent ? null : menu.slug,
       });
       await fetchPosts();
       onClose();
+      setLoading(false)
     } catch (error) {
       console.log(error);
+      setLoading(false)
     }
   }
 
   return (
     <div className="fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center z-50">
+      <LoadingScreen loading={loading} />
       <div className="bg-white p-8 rounded-lg shadow-lg w-96">
         <h2 className="text-2xl mb-4">Create Menu</h2>
         <p className="mb-4">Insert the name of the menu</p>
@@ -98,5 +102,15 @@ const Modal = ({ isOpen, onClose, menu, isParent }) => {
     </div>
   );
 };
+
+function LoadingScreen({ loading }) {
+  if (!loading) return null;
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex flex-col items-center justify-center z-50">
+      <div className="w-16 h-16 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+      <p className="text-white mt-4 text-lg font-semibold">Loading...</p>
+    </div>
+  );
+}
 
 export default Modal;

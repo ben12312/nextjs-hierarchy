@@ -11,6 +11,7 @@ const DataContext = createContext();
 const TreeNode = ({ menu }) => {
   const [expanded, setExpanded] = React.useState(false);
   const {menus, setMenus} = useContext(DataContext);
+  const [loading, setLoading] = useState(false);
   const {selectedMenu, setSelectedMenu, isModalOpen, setIsModalOpen, isParent, setIsParent} = useContext(DataContext);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const { fetchPosts } = useContext(MyContext);
@@ -25,10 +26,13 @@ const TreeNode = ({ menu }) => {
   const handleConfirm = async () => {
     if (selectedMenu.children.length > 0) return alert('Can not delete parent, remove child first!');
     try {
+      setLoading(true)
       const res = await fetchData(`/menu/${selectedMenu.id}`, "DELETE");
       if (res.status == 200) await fetchPosts();
+      setLoading(false)
     } catch (error) {
       console.log(error);
+      setLoading(false)
     }
     alert('You confirmed!');
     closeConfirmModal();
@@ -59,6 +63,7 @@ const TreeNode = ({ menu }) => {
 
   return (
     <div style={{ marginLeft: "20px" }}>
+      <LoadingScreen loading={loading} />
       <div onClick={handleClick} style={{ cursor: "pointer" }} className="flex space-x-4">
         {menu.children && menu.children.length > 0 && (
           <span>{expanded ? "▼" : "▶"} </span>
@@ -82,10 +87,21 @@ const TreeNode = ({ menu }) => {
   );
 };
 
+function LoadingScreen({ loading }) {
+  if (!loading) return null;
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex flex-col items-center justify-center z-50">
+      <div className="w-16 h-16 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+      <p className="text-white mt-4 text-lg font-semibold">Loading...</p>
+    </div>
+  );
+}
+
 const Home = () => {
   const [menus, setMenus] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isParent, setIsParent] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [selectedMenu, setSelectedMenu] = useState({
     id: '',
     name: '',
@@ -104,11 +120,14 @@ const Home = () => {
 
   async function fetchPosts() {
     try {
+      setLoading(true)
       const res = await fetchData("/menu", "GET");
       const data = await res.json();
       generateChild(data);
+      setLoading(false)
     } catch (error) {
       console.log(error);
+      setLoading(false)
     }
   }
 
@@ -144,10 +163,13 @@ const Home = () => {
 
   async function updateMenu() {
     try {
+      setLoading(true)
       const res = await fetchData(`/menu/${selectedMenu.id}`, "PATCH", { name: selectedMenu.name });
       if (res.status == 200) await fetchPosts();
+      setLoading(false)
     } catch (error) {
       console.log(error);
+      setLoading(false)
     }
   }
 
@@ -156,13 +178,13 @@ const Home = () => {
     setIsModalOpen(true);
   }
 
-  if (menus.length == 0) return <div>Loading...</div>
+  if (menus.length == 0) return <LoadingScreen/>
   return (
     <DataContext.Provider value={{ selectedMenu, setSelectedMenu, menus, setMenus, isModalOpen, setIsModalOpen, isParent, setIsParent }}>
       <MyContext.Provider value={{ fetchPosts }}>
       <div style={{ display: "flex" }}>
         <Sidebar />
-        
+        <LoadingScreen loading={loading} />
         <div className="container pt-10 pl-5">
           <div className="left" style={{ flex: 1, padding: "20px" }}>
             <div className="flex items-center space-x-2 pb-5">
